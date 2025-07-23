@@ -17,8 +17,14 @@ python sleep_preprocessing.py --input_csv /path/to/records.csv --arousal_path /p
 
 ## training script
 train a model using the main script
+
 RUN:
-python main.py
+python main.py \
+  --data_input /path/to/info.csv \
+  --model_out_path /path/to/model.pth \
+  --thresholds_out_path /path/to/thresholds.json \
+  --histories_out_path /path/to/history.csv \
+  --weights_out_dir /path/to/weights
 
 ## runnig a saved model
 run a saved model using the runsaved script
