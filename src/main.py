@@ -18,10 +18,31 @@ def parse_args():
     parser.add_argument("--thresholds_out_path", type=str, required=True, help="Path to save the thresholds .json")
     parser.add_argument("--histories_out_path", type=str, required=True, help="Path to save training history")
     parser.add_argument("--weights_out_dir", type=str, required=True, help="Directory to save weights")
+    
     return parser.parse_args()
 
 def main():
     args = parse_args()
+
+    #make weights output directory if it does not exist
+    if not os.path.exists(args.weights_out_dir):
+        os.makedirs(args.weights_out_dir)
+    #make histories output directory if it does not exist
+    if not os.path.exists(os.path.dirname(args.histories_out_path)):
+        os.makedirs(os.path.dirname(args.histories_out_path))
+    #make model output directory if it does not exist
+    if not os.path.exists(os.path.dirname(args.model_out_path)):
+        os.makedirs(os.path.dirname(args.model_out_path))
+    #make thresholds output directory if it does not exist
+    if not os.path.exists(os.path.dirname(args.thresholds_out_path)):
+        os.makedirs(os.path.dirname(args.thresholds_out_path))
+    # Check if the input file exists
+    if not os.path.isfile(args.data_input):
+        raise FileNotFoundError(f"The input file {args.data_input} does not exist.")
+    
+
+    #add folder of data_input to sys.path
+    data_input_folder = os.path.dirname(args.data_input)
 
     # Set seeds
     np.random.seed(42)
@@ -29,7 +50,8 @@ def main():
 
     df = pd.read_csv(args.data_input)
     df = df[df.record.notna()]  # drop rows with NaN record
-    df = df[df.record != 3347]  # add other exclusions as needed
+    df["eeg_file"] = df["eeg_file"].apply(lambda x: os.path.join(data_input_folder, x))
+    df["event_file"] = df["event_file"].apply(lambda x: os.path.join(data_input_folder, x))
 
     sfreq = pd.unique(df["fs"])[0]
     window = 240
@@ -41,7 +63,13 @@ def main():
     idx_split = 30
 
     records = sorted(pd.unique(df.record))
-    r_train, r_val = train_test_split(records, train_size=0.9, test_size=0.1, random_state=idx_split)
+    if len(records) < 10:
+        print("Not enough records for training. Ensure the input data has sufficient records.")
+        print("This script will test the flow training and evaluating on the same record(s).")
+        r_train = records
+        r_val = records
+    else:
+        r_train, r_val = train_test_split(records, train_size=0.9, test_size=0.1, random_state=idx_split)
 
     df_train = df[df.record.isin(r_train)].reset_index(drop=True)
     df_val = df[df.record.isin(r_val)].reset_index(drop=True)
@@ -93,7 +121,7 @@ def main():
         lr=0.001,
         patience=100,
         lr_decrease_patience=30,
-        epochs=8,
+        epochs=1,#8,
         k_max=5,
         max_pooling=2,
         batch_size=128,
@@ -113,7 +141,7 @@ def main():
                 continue
 
             pred_gen = DataGen(df[df.record == r], **gen_params, index_on_events=False)
-            y_true, y_pred, _ = model.predict_generator(pred_gen, detection_thresholds)
+            y_true, y_pred, _, _ = model.predict_generator(pred_gen, detection_thresholds)
 
             for idx, th in enumerate(detection_thresholds):
                 s = multi_evaluation(y_true.squeeze(), y_pred[idx].squeeze(), sfreq=pred_gen.fs, iou_ths=[0.001])

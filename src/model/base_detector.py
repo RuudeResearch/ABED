@@ -41,6 +41,7 @@ class BaseDetector(nn.Module):
 
         super(BaseDetector, self).__init__()
         self.sizes = {}
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.num_workers = num_workers
         self.shuffle = shuffle
@@ -171,15 +172,18 @@ class BaseDetector(nn.Module):
 
             # pred vector
             x_ = x.unsqueeze(0)
-            z_loc, z_clf = self.predict(Variable(x_).cuda())
+            #z_loc, z_clf = self.predict(Variable(x_).cuda())
+            z_loc, z_clf = self.predict(Variable(x_).to(self.device)) #update test
 
             # detection here
             for idx_thres, thres in enumerate(detection_threshold):
                 # print(idx_thres)
                 self.detector.set_params(classification_threshold=thres)
 
+                # z = self.detector(
+                #     z_loc, z_clf, detection_threshold,self.localizations_default.cuda())
                 z = self.detector(
-                    z_loc, z_clf, detection_threshold,self.localizations_default.cuda())
+                    z_loc, z_clf, detection_threshold,self.localizations_default.to(self.device)) #update test
                 # print(z)
                                       
                 # print(z.shape)
@@ -251,7 +255,8 @@ class BaseDetector(nn.Module):
         #if params is None: #Don't know if these 3 lines should be here
         #params = self.parameters()
 
-        self.cuda()
+        #self.cuda()
+        self.to(self.device) #update test
 
         dataloader_parameters_train = {
             "num_workers": self.num_workers,
@@ -272,7 +277,8 @@ class BaseDetector(nn.Module):
         val_loader = DataLoader(val_gen, **dataloader_parameters_val)
 
         # criterion
-        device = torch.device("cuda")
+        #device = torch.device("cuda")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         criterion = self.criterion(**self.loss_parameters)
 
@@ -325,7 +331,8 @@ class BaseDetector(nn.Module):
                     self.train()
 
                 eeg, events = batch
-                x = eeg.cuda() 
+                #x = eeg.cuda() 
+                x = eeg.to(device)
                 #print(x)
                 #print(x.shape)
 
@@ -388,7 +395,8 @@ class BaseDetector(nn.Module):
                             for idx_batch_, batch in enumerate(bar_val):
 
                                 eeg, events = batch
-                                x = eeg.cuda() 
+                                #x = eeg.cuda() 
+                                x = eeg.to(device)
                                 #print(x.shape)
 
                                 # step 1: forward pass
@@ -469,7 +477,8 @@ class BaseDetector(nn.Module):
             for idx_batch, batch in enumerate(bar_val):
 
                 eeg, events = batch
-                x = eeg.cuda() 
+                #x = eeg.cuda() 
+                x = eeg.to(device)
 
                 # step 1: forward pass
                 locs, clfs = self.forward(x)

@@ -39,12 +39,12 @@ class Detection(nn.Module, BaseEstimator):
             z1=2
 
         scores_ground = nn.Softmax(dim=2)(classifications)
-        cuda0 = th.device('cuda:0')
+        device = th.device("cuda" if th.cuda.is_available() else "cpu")
 
-        indices1 = th.tensor([0 ,1]).cuda()
-        indices2 = th.tensor([0 ,2]).cuda()
-        indices3 = th.tensor([0 ,3]).cuda()
-        indices4 = th.tensor([0 ,4]).cuda()
+        indices1 = th.tensor([0 ,1]).to(device)
+        indices2 = th.tensor([0 ,2]).to(device)
+        indices3 = th.tensor([0 ,3]).to(device)
+        indices4 = th.tensor([0 ,4]).to(device)
 
         a1 = th.index_select(classifications, 2, indices1)
         a2 = th.index_select(classifications, 2, indices2)
@@ -56,8 +56,8 @@ class Detection(nn.Module, BaseEstimator):
         scores3 = nn.Softmax(dim=2)(a3)
         scores4 = nn.Softmax(dim=2)(a4)
 
-        idx0 = th.tensor([0]).cuda()
-        idx1 = th.tensor([1]).cuda()
+        idx0 = th.tensor([0]).to(device)
+        idx1 = th.tensor([1]).to(device)
 
         col0=th.index_select(scores_ground,2,idx0)
         col1 = th.index_select(scores1, 2, idx1)
