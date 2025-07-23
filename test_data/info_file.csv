@@ -1,0 +1,5 @@
+Unnamed: 0,label,event,record,eeg_file,event_file,fs,n_times,n_events
+0,0,OSA,9999,/test_data/data.mm,/test_data/OSA.mm,8,246000,3
+2252,1,CSA,9999,/test_data/data.mm,/test_data/CSA.mm,8,246000,6
+3974,2,HYPO,9999,/test_data/data.mm,/test_data/HYPO.mm,8,246000,40
+6803,3,NAD,9999,/test_data/data.mm,/test_data/NAD.mm,8,246000,75
